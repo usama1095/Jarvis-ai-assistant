@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>J.A.R.V.I.S. Live Voice Assistant</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              jarvis: {
+                cyan: "#00f0ff",
+                blue: "#0066ff",
+                dark: "#030814",
+                card: "#0a152d",
+                border: "#00f0ff33",
+                gold: "#ffb700",
+              },
+            },
+            fontFamily: {
+              orbitron: ["Orbitron", "sans-serif"],
+              rajdhani: ["Rajdhani", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        background-color: #030814;
+        color: #e2e8f0;
+        font-family: "Rajdhani", sans-serif;
+        overflow-x: hidden;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #030814;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #00f0ff44;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #00f0ffaa;
+      }
+
+      /* Arc Reactor Visualizer Styling */
+      .reactor-outer {
+        box-shadow:
+          0 0 35px rgba(0, 240, 255, 0.4),
+          inset 0 0 25px rgba(0, 240, 255, 0.3);
+        animation: pulse-ring 4s infinite linear;
+      }
+
+      .reactor-core {
+        box-shadow:
+          0 0 50px rgba(0, 240, 255, 0.8),
+          inset 0 0 30px rgba(0, 240, 255, 0.9);
+      }
+
+      .listening-active {
+        animation: pulse-speaking 1.2s infinite ease-in-out;
+        box-shadow:
+          0 0 60px rgba(0, 240, 255, 0.9),
+          inset 0 0 40px rgba(0, 240, 255, 0.9);
+        border-color: #00f0ff !important;
+      }
+
+      .speaking-active {
+        animation: pulse-speaking 0.8s infinite ease-in-out;
+        box-shadow:
+          0 0 70px rgba(255, 183, 0, 0.8),
+          inset 0 0 40px rgba(255, 183, 0, 0.8);
+        border-color: #ffb700 !important;
+      }
+
+      @keyframes pulse-ring {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(0eg);
+        }
+      }
+
+      @keyframes pulse-speaking {
+        0% {
+          transform: scale(0.98);
+          opacity: 0.8;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(0.98);
+          opacity: 0.8;
+        }
+      }
+
+      .hud-border {
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        position: relative;
+      }
+
+      .hud-border::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        width: 8px;
+        height: 8px;
+        border-top: 2px solid #00f0ff;
+        border-left: 2px solid #00f0ff;
+      }
+
+      .hud-border::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 8px;
+        height: 8px;
+        border-bottom: 2px solid #00f0ff;
+        border-right: 2px solid #00f0ff;
+      }
+
+      /* Glassmorphism */
+      .glass-panel {
+        background: rgba(10, 21, 45, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body class="h-screen flex flex-col justify-between select-none">
+    <!-- Top HUD Navigation Bar -->
+    <header
+      class="w-full glass-panel px-6 py-3 flex justify-between items-center z-20 border-b border-jarvis-border"
+    >
+      <div class="flex items-center space-x-3">
+        <div
+          class="p-2 rounded-lg bg-jarvis-cyan/10 border border-jarvis-cyan/30 text-jarvis-cyan"
+        >
+          <i data-lucide="cpu" class="w-6 h-6 animate-pulse"></i>
+        </div>
+        <div>
+          <h1
+            class="font-orbitron font-extrabold text-xl tracking-wider text-white flex items-center gap-2"
+          >
+            J.A.R.V.I.S.
+            <span
+              class="text-xs px-2 py-0.5 rounded bg-jarvis-cyan/20 text-jarvis-cyan border border-jarvis-cyan/40"
+              >LIVE OS</span
+            >
+          </h1>
+          <p class="text-xs text-cyan-300/70 font-mono tracking-widest">
+            SYSTEM VERSION 4.0.9 // VOICE CORE ONLINE
+          </p>
+        </div>
+      </div>
+
+      <!-- Status Metrics & Settings Button -->
+      <div class="flex items-center space-x-6">
+        <div class="hidden md:flex items-center space-x-4 text-xs font-mono">
+          <div class="flex items-center space-x-2">
+            <span
+              class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"
+            ></span>
+            <span class="text-gray-400">NETWORK:</span>
+            <span class="text-emerald-400 font-bold">ONLINE</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-gray-400">MODEL:</span>
+            <span class="text-jarvis-cyan font-bold" id="current-model-display"
+              >openrouter/free</span
+            >
+          </div>
+        </div>
+
+        <button
+          id="open-settings-btn"
+          class="px-3 py-1.5 rounded-md glass-panel hover:border-jarvis-cyan text-gray-300 hover:text-jarvis-cyan transition flex items-center space-x-2 text-sm font-semibold"
+        >
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>API Settings</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace / Split UI -->
+    <main
+      class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 overflow-hidden relative"
+    >
+      <!-- Left HUD Column: Live Arc Reactor & Status Panel (Lg: 5 Cols) -->
+      <section
+        class="lg:col-span-5 flex flex-col justify-between items-center glass-panel p-6 rounded-xl relative overflow-hidden"
+      >
+        <!-- Background HUD Grid Overlay -->
+        <div
+          class="absolute inset-0 bg-[radial-gradient(#00f0ff15_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none"
+        ></div>
+
+        <!-- Top Left Status Indicator -->
+        <div
+          class="w-full flex justify-between items-center text-xs font-mono text-cyan-300/80 z-10"
+        >
+          <span class="hud-border px-2 py-1 bg-jarvis-dark/80"
+            >CORE STATUS:
+            <span id="core-status" class="text-jarvis-cyan font-bold"
+              >STANDBY</span
+            ></span
+          >
+          <span class="hud-border px-2 py-1 bg-jarvis-dark/80" id="live-clock"
+            >00:00:00 PM</span
+          >
+        </div>
+
+        <!-- Central Arc Reactor Visualization Core -->
+        <div
+          class="relative my-auto flex flex-col items-center justify-center z-10"
+        >
+          <!-- Rotating Outer Ring -->
+          <div
+            id="reactor-ring"
+            class="w-64 h-64 md:w-72 md:h-72 rounded-full border-2 border-dashed border-jarvis-cyan/60 reactor-outer flex items-center justify-center transition-all duration-500"
+          >
+            <!-- Inner Active Core -->
+            <div
+              id="reactor-core"
+              class="w-44 h-44 md:w-48 md:h-48 rounded-full border-4 border-jarvis-cyan/80 bg-jarvis-dark/80 reactor-core flex flex-col items-center justify-center transition-all duration-300 cursor-pointer group"
+              title="Click to Toggle Hands-Free Listening"
+            >
+              <i
+                id="reactor-icon"
+                data-lucide="mic"
+                class="w-12 h-12 text-jarvis-cyan transition-transform group-hover:scale-110"
+              ></i>
+              <span
+                id="reactor-text"
+                class="text-xs font-orbitron text-cyan-200 mt-2 tracking-widest font-bold"
+                >TAP TO TALK</span
+              >
+            </div>
+          </div>
+
+          <!-- Live Audio Visualizer Bar Spectrum -->
+          <div
+            class="flex items-center space-x-1.5 mt-8 h-8"
+            id="audio-bar-spectrum"
+          >
+            <div
+              class="w-1 bg-jarvis-cyan/40 h-2 rounded transition-all duration-150"
+            ></div>
+            <div
+              class="w-1 bg-jarvis-cyan/60 h-4 rounded transition-all duration-150"
+            ></div>
+            <div
+              class="w-1 bg-jarvis-cyan/80 h-6 rounded transition-all duration-150"
+            ></div>
+            <div
+              class="w-1 bg-jarvis-cyan h-3 rounded transition-all duration-150"
+            ></div>
+            <div
+              class="w-1 bg-jarvis-cyan/80 h-7 rounded transition-all duration-150"
+            ></div>
+            <div
+              class="w-1 bg-jarvis-cyan/60 h-2 rounded transition-all duration-150"
+            ></div>
+          </div>
+
+          <p
+            id="live-transcription-preview"
+            class="text-sm font-mono text-center text-cyan-200/80 mt-2 min-h-[1.5rem] max-w-sm italic"
+          >
+            "Awaiting voice activation or text input..."
+          </p>
+        </div>
+
+        <!-- Quick Voice Tasks Bar -->
+        <div class="w-full z-10">
+          <p
+            class="text-xs font-mono text-cyan-300/60 mb-2 uppercase tracking-wider text-center"
+          >
+            Quick Voice Commands
+          </p>
+          <div
+            class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold"
+          >
+            <button
+              onclick="triggerQuickTask('What time is it?')"
+              class="px-2 py-2 glass-panel hover:bg-jarvis-cyan/20 border border-jarvis-border text-cyan-200 rounded text-center transition flex flex-col items-center gap-1"
+            >
+              <i data-lucide="clock" class="w-4 h-4 text-jarvis-cyan"></i> Check
+              Time
+            </button>
+            <button
+              onclick="triggerQuickTask('Open Google search')"
+              class="px-2 py-2 glass-panel hover:bg-jarvis-cyan/20 border border-jarvis-border text-cyan-200 rounded text-center transition flex flex-col items-center gap-1"
+            >
+              <i data-lucide="globe" class="w-4 h-4 text-jarvis-cyan"></i> Open
+              Web
+            </button>
+            <button
+              onclick="triggerQuickTask('Open Notepad notes')"
+              class="px-2 py-2 glass-panel hover:bg-jarvis-cyan/20 border border-jarvis-border text-cyan-200 rounded text-center transition flex flex-col items-center gap-1"
+            >
+              <i data-lucide="file-text" class="w-4 h-4 text-jarvis-cyan"></i>
+              Quick Notes
+            </button>
+            <button
+              onclick="triggerQuickTask('Tell me a short joke')"
+              class="px-2 py-2 glass-panel hover:bg-jarvis-cyan/20 border border-jarvis-border text-cyan-200 rounded text-center transition flex flex-col items-center gap-1"
+            >
+              <i data-lucide="sparkles" class="w-4 h-4 text-jarvis-cyan"></i> AI
+              Humor
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Live Chat Log & System Response Engine (Lg: 7 Cols) -->
+      <section
+        class="lg:col-span-7 flex flex-col glass-panel rounded-xl overflow-hidden hud-border"
+      >
+        <!-- Chat Header Controls -->
+        <div
+          class="px-6 py-3 bg-jarvis-dark/80 border-b border-jarvis-border flex justify-between items-center"
+        >
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-jarvis-cyan"></span>
+            <h2
+              class="font-orbitron text-sm font-bold text-cyan-100 tracking-wider"
+            >
+              LIVE DIALOGUE LOG
+            </h2>
+          </div>
+
+          <div class="flex items-center space-x-4">
+            <!-- Auto Voice Toggle -->
+            <label
+              class="flex items-center space-x-2 cursor-pointer text-xs font-mono text-cyan-200"
+            >
+              <input
+                type="checkbox"
+                id="tts-auto-speak"
+                checked
+                class="accent-jarvis-cyan rounded"
+              />
+              <span>Auto-Voice Output</span>
+            </label>
+
+            <button
+              id="clear-chat-btn"
+              class="text-xs text-gray-400 hover:text-red-400 transition flex items-center space-x-1"
+              title="Clear Conversation"
+            >
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Message Transcript -->
+        <div
+          id="chat-messages-container"
+          class="flex-1 p-6 overflow-y-auto space-y-4"
+        >
+          <!-- Initial Welcome Message -->
+          <div class="flex items-start space-x-3">
+            <div
+              class="p-2 rounded-lg bg-jarvis-cyan/20 border border-jarvis-cyan/40 text-jarvis-cyan shrink-0"
+            >
+              <i data-lucide="bot" class="w-5 h-5"></i>
+            </div>
+            <div
+              class="glass-panel p-4 rounded-xl border-jarvis-border max-w-[85%] text-gray-200 text-sm leading-relaxed"
+            >
+              <p class="font-bold font-orbitron text-jarvis-cyan mb-1">
+                J.A.R.V.I.S.
+              </p>
+              Greetings, Sir. Voice interface and neural core are operational.
+              You can tap the Arc Reactor to speak directly, or enter your
+              queries in the terminal below. How may I assist you today?
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Console Bar (Supports both Text typing & Voice triggering) -->
+        <div class="p-4 bg-jarvis-dark/90 border-t border-jarvis-border">
+          <form id="chat-form" class="flex items-center space-x-2">
+            <button
+              type="button"
+              id="mic-toggle-btn"
+              class="p-3 rounded-lg glass-panel hover:bg-jarvis-cyan/20 border border-jarvis-border text-jarvis-cyan transition flex items-center justify-center shrink-0"
+              title="Toggle Live Speech Input"
+            >
+              <i data-lucide="mic" class="w-5 h-5"></i>
+            </button>
+
+            <input
+              type="text"
+              id="user-input"
+              placeholder="Type a message or speak out loud..."
+              class="flex-1 bg-jarvis-card/80 border border-jarvis-border rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-jarvis-cyan transition font-mono"
+              autocomplete="off"
+            />
+
+            <button
+              type="submit"
+              class="p-3 rounded-lg bg-jarvis-cyan text-jarvis-dark hover:bg-cyan-300 font-bold transition flex items-center justify-center shrink-0"
+              title="Send Query"
+            >
+              <i data-lucide="send" class="w-5 h-5"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- API Settings Modal -->
+    <div
+      id="settings-modal"
+      class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="glass-panel p-6 rounded-xl hud-border max-w-md w-full mx-4 space-y-4"
+      >
+        <div
+          class="flex justify-between items-center border-b border-jarvis-border pb-3"
+        >
+          <h3
+            class="font-orbitron font-bold text-lg text-white flex items-center gap-2"
+          >
+            <i data-lucide="sliders" class="w-5 h-5 text-jarvis-cyan"></i>
+            System Configurations
+          </h3>
+          <button
+            id="close-settings-btn"
+            class="text-gray-400 hover:text-white transition"
+          >
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-sm font-mono">
+          <div>
+            <label class="block text-cyan-300 mb-1">OpenRouter API Key</label>
+            <input
+              type="password"
+              id="api-key-input"
+              placeholder="sk-or-v1-..."
+              class="w-full bg-jarvis-dark border border-jarvis-border rounded p-2.5 text-white focus:outline-none focus:border-jarvis-cyan"
+            />
+            <p class="text-[11px] text-gray-400 mt-1">
+              Key is safely stored locally in your browser session.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-cyan-300 mb-1">Model Selection</label>
+            <input
+              type="text"
+              id="model-input"
+              value="openrouter/free"
+              class="w-full bg-jarvis-dark border border-jarvis-border rounded p-2.5 text-white focus:outline-none focus:border-jarvis-cyan"
+            />
+            <p class="text-[11px] text-gray-400 mt-1">
+              Default model route: <code>openrouter/free</code>
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-cyan-300 mb-1"
+              >Voice Accent / Engine</label
+            >
+            <select
+              id="voice-select"
+              class="w-full bg-jarvis-dark border border-jarvis-border rounded p-2.5 text-white focus:outline-none focus:border-jarvis-cyan"
+            >
+              <option value="">Default System Voice</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end space-x-3">
+          <button
+            id="save-settings-btn"
+            class="w-full py-2.5 rounded bg-jarvis-cyan text-jarvis-dark font-bold hover:bg-cyan-300 transition"
+          >
+            Save Configurations
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notepad Task Modal Simulation -->
+    <div
+      id="notes-modal"
+      class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="glass-panel p-6 rounded-xl hud-border max-w-lg w-full mx-4 space-y-3"
+      >
+        <div
+          class="flex justify-between items-center border-b border-jarvis-border pb-2"
+        >
+          <h3
+            class="font-orbitron font-bold text-cyan-200 flex items-center gap-2"
+          >
+            <i data-lucide="file-text" class="w-5 h-5 text-jarvis-cyan"></i>
+            J.A.R.V.I.S. Quick Pad
+          </h3>
+          <button
+            onclick="
+              document.getElementById('notes-modal').classList.add('hidden')
+            "
+            class="text-gray-400 hover:text-white"
+          >
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <textarea
+          id="notes-area"
+          rows="8"
+          placeholder="Type or dictate notes here..."
+          class="w-full bg-jarvis-dark border border-jarvis-border rounded p-3 text-white font-mono text-sm focus:outline-none focus:border-jarvis-cyan"
+        ></textarea>
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400 font-mono"
+            >Auto-saved locally</span
+          >
+          <button
+            onclick="
+              document.getElementById('notes-modal').classList.add('hidden')
+            "
+            class="px-4 py-1.5 rounded bg-jarvis-cyan text-jarvis-dark font-bold text-sm"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Application Script Engine -->
+    <script>
+      // System State
+      const state = {
+        apiKey: localStorage.getItem("jarvis_api_key") || "",
+        model: localStorage.getItem("jarvis_model") || "openrouter/free",
+        isListening: false,
+        isSpeaking: false,
+        history: [
+          {
+            role: "system",
+            content:
+              "You are J.A.R.V.I.S., an advanced, highly intelligent, witty, and polite AI assistant. Answer concisely, naturally, and directly. Your replies will be read aloud via speech synthesis.",
+          },
+        ],
+      };
+
+      // DOM Elements
+      const reactorCore = document.getElementById("reactor-core");
+      const reactorRing = document.getElementById("reactor-ring");
+      const reactorIcon = document.getElementById("reactor-icon");
+      const reactorText = document.getElementById("reactor-text");
+      const coreStatus = document.getElementById("core-status");
+      const liveClock = document.getElementById("live-clock");
+      const previewText = document.getElementById("live-transcription-preview");
+      const chatContainer = document.getElementById("chat-messages-container");
+      const chatForm = document.getElementById("chat-form");
+      const userInput = document.getElementById("user-input");
+      const micToggleBtn = document.getElementById("mic-toggle-btn");
+      const ttsAutoSpeak = document.getElementById("tts-auto-speak");
+      const settingsModal = document.getElementById("settings-modal");
+      const apiKeyInput = document.getElementById("api-key-input");
+      const modelInput = document.getElementById("model-input");
+      const voiceSelect = document.getElementById("voice-select");
+      const currentModelDisplay = document.getElementById(
+        "current-model-display",
+      );
+
+      // Speech Recognition Setup (Web Speech API)
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      let recognition = null;
+
+      if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onstart = () => {
+          state.isListening = true;
+          updateVisualizerState();
+        };
+
+        recognition.onresult = (event) => {
+          let interim = "";
+          let final = "";
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              final += event.results[i][0].transcript;
+            } else {
+              interim += event.results[i][0].transcript;
+            }
+          }
+
+          previewText.innerText = `"${final || interim}"`;
+
+          if (final) {
+            userInput.value = final;
+            processUserMessage(final);
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.warn("Speech Recognition Error:", event.error);
+          state.isListening = false;
+          updateVisualizerState();
+          previewText.innerText = `Speech error: ${event.error}`;
+        };
+
+        recognition.onend = () => {
+          state.isListening = false;
+          updateVisualizerState();
+        };
+      } else {
+        previewText.innerText =
+          "Speech Recognition API not supported in this browser.";
+      }
+
+      // Web Speech Synthesis Setup
+      const synth = window.speechSynthesis;
+      let availableVoices = [];
+
+      function loadVoices() {
+        availableVoices = synth.getVoices();
+        voiceSelect.innerHTML =
+          '<option value="">Default System Voice</option>';
+        availableVoices.forEach((voice, idx) => {
+          const option = document.createElement("option");
+          option.value = idx;
+          option.textContent = `${voice.name} (${voice.lang})`;
+          if (
+            voice.name.includes("Natural") ||
+            voice.name.includes("Google") ||
+            voice.name.includes("Samantha") ||
+            voice.name.includes("Jarvis")
+          ) {
+            option.selected = true;
+          }
+          voiceSelect.appendChild(option);
+        });
+      }
+
+      if (synth) {
+        loadVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+          speechSynthesis.onvoiceschanged = loadVoices;
+        }
+      }
+
+      // Speak Response Text Out Loud
+      function speakText(text) {
+        if (!synth || !ttsAutoSpeak.checked) return;
+
+        // Stop any ongoing speech
+        synth.cancel();
+
+        // Sanitize text for speech (remove markdown code blocks or symbols)
+        const cleanText = text
+          .replace(/```[\s\S]*?```/g, "Code block generated.")
+          .replace(/[*_#`]/g, "");
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+
+        if (voiceSelect.value !== "") {
+          utterance.voice = availableVoices[voiceSelect.value];
+        }
+
+        utterance.rate = 1.0;
+        utterance.pitch = 0.95; // Slightly lower pitch for JARVIS persona
+
+        utterance.onstart = () => {
+          state.isSpeaking = true;
+          updateVisualizerState();
+        };
+
+        utterance.onend = () => {
+          state.isSpeaking = false;
+          updateVisualizerState();
+        };
+
+        utterance.onerror = () => {
+          state.isSpeaking = false;
+          updateVisualizerState();
+        };
+
+        synth.speak(utterance);
+      }
+
+      // Update Arc Reactor UI according to system state
+      function updateVisualizerState() {
+        if (state.isListening) {
+          reactorRing.className =
+            "w-64 h-64 md:w-72 md:h-72 rounded-full border-2 border-dashed border-jarvis-cyan listening-active flex items-center justify-center transition-all duration-300";
+          reactorCore.className =
+            "w-44 h-44 md:w-48 md:h-48 rounded-full border-4 border-jarvis-cyan bg-jarvis-dark reactor-core flex flex-col items-center justify-center";
+          reactorIcon.setAttribute("data-lucide", "mic");
+          reactorText.innerText = "LISTENING...";
+          reactorText.className =
+            "text-xs font-orbitron text-jarvis-cyan mt-2 tracking-widest font-bold animate-pulse";
+          coreStatus.innerText = "RECEIVING AUDIO";
+          coreStatus.className = "text-jarvis-cyan font-bold animate-pulse";
+        } else if (state.isSpeaking) {
+          reactorRing.className =
+            "w-64 h-64 md:w-72 md:h-72 rounded-full border-2 border-dashed border-jarvis-gold speaking-active flex items-center justify-center transition-all duration-300";
+          reactorCore.className =
+            "w-44 h-44 md:w-48 md:h-48 rounded-full border-4 border-jarvis-gold bg-jarvis-dark reactor-core flex flex-col items-center justify-center";
+          reactorIcon.setAttribute("data-lucide", "volume-2");
+          reactorText.innerText = "SPEAKING...";
+          reactorText.className =
+            "text-xs font-orbitron text-jarvis-gold mt-2 tracking-widest font-bold animate-pulse";
+          coreStatus.innerText = "TRANSMITTING VOICE";
+          coreStatus.className = "text-jarvis-gold font-bold animate-pulse";
+        } else {
+          reactorRing.className =
+            "w-64 h-64 md:w-72 md:h-72 rounded-full border-2 border-dashed border-jarvis-cyan/60 reactor-outer flex items-center justify-center transition-all duration-500";
+          reactorCore.className =
+            "w-44 h-44 md:w-48 md:h-48 rounded-full border-4 border-jarvis-cyan/80 bg-jarvis-dark/80 reactor-core flex flex-col items-center justify-center";
+          reactorIcon.setAttribute("data-lucide", "mic");
+          reactorText.innerText = "TAP TO TALK";
+          reactorText.className =
+            "text-xs font-orbitron text-cyan-200 mt-2 tracking-widest font-bold";
+          coreStatus.innerText = "STANDBY";
+          coreStatus.className = "text-jarvis-cyan font-bold";
+        }
+        lucide.createIcons();
+      }
+
+      // Toggle Live Voice Input
+      function toggleVoiceInput() {
+        if (!recognition) {
+          alert("Speech recognition is not supported in your browser.");
+          return;
+        }
+
+        if (state.isListening) {
+          recognition.stop();
+        } else {
+          if (synth.speaking) synth.cancel();
+          recognition.start();
+        }
+      }
+
+      // Execute OS System Simulations locally
+      function executeLocalTask(query) {
+        const cmd = query.toLowerCase();
+
+        if (cmd.includes("time") || cmd.includes("clock")) {
+          const timeStr = new Date().toLocaleTimeString();
+          return `Sir, the current time is ${timeStr}.`;
+        }
+
+        if (
+          cmd.includes("open google") ||
+          cmd.includes("open web") ||
+          cmd.includes("search browser")
+        ) {
+          window.open("https://www.google.com", "_blank");
+          return "Launching Google web search in a new window, Sir.";
+        }
+
+        if (
+          cmd.includes("open notepad") ||
+          cmd.includes("notes") ||
+          cmd.includes("quick note")
+        ) {
+          document.getElementById("notes-modal").classList.remove("hidden");
+          return "Opening your JARVIS Quick Pad, Sir.";
+        }
+
+        return null;
+      }
+
+      // Process User Inputs and Interact with OpenRouter API
+      async function processUserMessage(promptText) {
+        if (!promptText.trim()) return;
+
+        // Render User Bubble
+        appendChatMessage("user", promptText);
+        userInput.value = "";
+
+        // Check if user prompt matches a local OS automation task
+        const localReply = executeLocalTask(promptText);
+        if (localReply) {
+          setTimeout(() => {
+            appendChatMessage("assistant", localReply);
+            speakText(localReply);
+          }, 400);
+          return;
+        }
+
+        // Append user turn to history
+        state.history.push({ role: "user", content: promptText });
+
+        // Render temporary loading indicator
+        const loadingDiv = appendChatMessage(
+          "assistant",
+          "🤖 *J.A.R.V.I.S. is calculating...*",
+        );
+
+        try {
+          const response = await fetch(
+            "https://openrouter.ai/api/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${state.apiKey}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": window.location.href,
+                "X-Title": "JARVIS Live Voice Engine",
+              },
+              body: JSON.stringify({
+                model: state.model,
+                messages: state.history,
+              }),
+            },
+          );
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(
+              errData.error?.message || `HTTP ${response.status} Error`,
+            );
+          }
+
+          const data = await response.json();
+          const replyText =
+            data.choices[0]?.message?.content ||
+            "Sir, I encountered an issue parsing the response.";
+
+          // Update Assistant Message Content
+          loadingDiv.innerHTML = `<p class="font-bold font-orbitron text-jarvis-cyan mb-1">J.A.R.V.I.S.</p>${escapeHtml(replyText)}`;
+
+          // Append assistant turn to history
+          state.history.push({ role: "assistant", content: replyText });
+
+          // Automatic Voice Reply Out Loud
+          speakText(replyText);
+        } catch (error) {
+          console.error("JARVIS API Error:", error);
+          const errorMsg = state.apiKey
+            ? `System Alert: ${error.message}`
+            : "System Alert: OpenRouter API key missing. Please configure your API key in the top settings panel.";
+          loadingDiv.innerHTML = `<p class="font-bold font-orbitron text-red-400 mb-1">J.A.R.V.I.S. ERROR</p>${errorMsg}`;
+          speakText(
+            "System alert. Please verify your OpenRouter API key configuration.",
+          );
+        }
+      }
+
+      // Helper to append message bubbles to HUD transcript
+      function appendChatMessage(role, text) {
+        const msgWrapper = document.createElement("div");
+        msgWrapper.className = "flex items-start space-x-3";
+
+        if (role === "user") {
+          msgWrapper.innerHTML = `
+                    <div class="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 shrink-0">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-cyan-500/30 max-w-[85%] text-cyan-100 text-sm leading-relaxed ml-auto bg-cyan-950/30">
+                        <p class="font-bold font-orbitron text-cyan-300 mb-1">YOU</p>
+                        ${escapeHtml(text)}
+                    </div>
+                `;
+        } else {
+          msgWrapper.innerHTML = `
+                    <div class="p-2 rounded-lg bg-jarvis-cyan/20 border border-jarvis-cyan/40 text-jarvis-cyan shrink-0">
+                        <i data-lucide="bot" class="w-5 h-5"></i>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-jarvis-border max-w-[85%] text-gray-200 text-sm leading-relaxed msg-content">
+                        ${text.includes("*J.A.R.V.I.S.") ? text : `<p class="font-bold font-orbitron text-jarvis-cyan mb-1">J.A.R.V.I.S.</p>${escapeHtml(text)}`}
+                    </div>
+                `;
+        }
+
+        chatContainer.appendChild(msgWrapper);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        lucide.createIcons();
+
+        return msgWrapper.querySelector(".msg-content") || msgWrapper;
+      }
+
+      // Helper: Quick Task Buttons Trigger
+      function triggerQuickTask(taskText) {
+        userInput.value = taskText;
+        processUserMessage(taskText);
+      }
+
+      // Utility: HTML Escaping
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      // Real-Time HUD Clock Tracker
+      function updateClock() {
+        const now = new Date();
+        liveClock.innerText = now.toLocaleTimeString();
+      }
+      setInterval(updateClock, 1000);
+      updateClock();
+
+      // Event Listeners
+      reactorCore.addEventListener("click", toggleVoiceInput);
+      micToggleBtn.addEventListener("click", toggleVoiceInput);
+
+      chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        processUserMessage(userInput.value);
+      });
+
+      document
+        .getElementById("open-settings-btn")
+        .addEventListener("click", () => {
+          apiKeyInput.value = state.apiKey;
+          modelInput.value = state.model;
+          settingsModal.classList.remove("hidden");
+        });
+
+      document
+        .getElementById("close-settings-btn")
+        .addEventListener("click", () => {
+          settingsModal.classList.add("hidden");
+        });
+
+      document
+        .getElementById("save-settings-btn")
+        .addEventListener("click", () => {
+          state.apiKey = apiKeyInput.value.trim();
+          state.model = modelInput.value.trim() || "openrouter/free";
+          localStorage.setItem("jarvis_api_key", state.apiKey);
+          localStorage.setItem("jarvis_model", state.model);
+          currentModelDisplay.innerText = state.model;
+          settingsModal.classList.add("hidden");
+        });
+
+      document
+        .getElementById("clear-chat-btn")
+        .addEventListener("click", () => {
+          chatContainer.innerHTML = "";
+          state.history = [state.history[0]];
+          appendChatMessage("assistant", "Conversation history cleared, Sir.");
+        });
+
+      // Initialize Lucide Icons on load
+      window.onload = () => {
+        lucide.createIcons();
+        apiKeyInput.value = state.apiKey;
+        currentModelDisplay.innerText = state.model;
+
+        // Load saved notes if any
+        const savedNote = localStorage.getItem("jarvis_quick_note");
+        if (savedNote) document.getElementById("notes-area").value = savedNote;
+        document.getElementById("notes-area").addEventListener("input", (e) => {
+          localStorage.setItem("jarvis_quick_note", e.target.value);
+        });
+      };
+      // Connect to Python WebSocket Server
+      const socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+      socket.onopen = () => {
+        console.log("Connected to Python JARVIS Backend");
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const replyText = data.reply;
+
+        // Display reply in UI chat transcript
+        appendChatMessage("jarvis", replyText);
+
+        // Direct voice reply out loud
+        speakText(replyText);
+      };
+
+      // Function to send user prompt (voice or typed text) to Python
+      function sendPromptToPython(userText, apiKey) {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(
+            JSON.stringify({
+              prompt: userText,
+              api_key: apiKey,
+            }),
+          );
+        }
+      }
+    </script>
+  </body>
+</html>
